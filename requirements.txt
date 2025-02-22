@@ -1,3 +1,12 @@
+flask
+gunicorn
 pandas
 requests
-urllib3
+urllib3<2.0.0
+openpyxl
+selenium
+webdriver-manager
+tenacity
+psycopg2-binary
+python-dotenv
+beautifulsoup4
