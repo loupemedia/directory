@@ -251,7 +251,12 @@ def execute_query(query: str, params: tuple = None) -> Any:
         cur = conn.cursor()
         cur.execute(query, params)
         conn.commit()
-        return cur.fetchall()
+        
+        # Only try to fetch results for SELECT queries
+        if query.strip().upper().startswith('SELECT'):
+            return cur.fetchall()
+        return []
+        
     except Exception as e:
         if conn:
             conn.rollback()
