@@ -148,16 +148,24 @@ def main():
         
         logger.info(f"Successfully generated {clusters_count} clusters")
         
-        # Print statistics about the clusters
+        # Print statistics about the clusters with corrected query
         stats = execute_query("""
+            WITH unnested_postcodes AS (
+                SELECT p.*,
+                       u.postcode_id
+                FROM postcodes p,
+                LATERAL UNNEST(p.cluster_postcodes) AS u(postcode_id)
+                WHERE p.is_cluster_center = TRUE
+            )
             SELECT 
-                COUNT(*) as total_clusters,
-                AVG(ARRAY_LENGTH(cluster_postcodes, 1)) as avg_postcodes_per_cluster,
-                MAX(ARRAY_LENGTH(cluster_postcodes, 1)) as max_postcodes_per_cluster,
-                MIN(ARRAY_LENGTH(cluster_postcodes, 1)) as min_postcodes_per_cluster,
-                COUNT(DISTINCT UNNEST(cluster_postcodes)) as total_postcodes_covered
-            FROM postcodes
-            WHERE is_cluster_center = TRUE
+                COUNT(DISTINCT p.id) as total_clusters,
+                AVG(ARRAY_LENGTH(p.cluster_postcodes, 1)) as avg_postcodes_per_cluster,
+                MAX(ARRAY_LENGTH(p.cluster_postcodes, 1)) as max_postcodes_per_cluster,
+                MIN(ARRAY_LENGTH(p.cluster_postcodes, 1)) as min_postcodes_per_cluster,
+                COUNT(DISTINCT up.postcode_id) as total_postcodes_covered
+            FROM postcodes p
+            LEFT JOIN unnested_postcodes up ON TRUE
+            WHERE p.is_cluster_center = TRUE
         """)[0]
         
         logger.info("Cluster Statistics:")
