@@ -3,7 +3,9 @@ from typing import Dict, List
 
 from utils import (
     logger,
-    execute_query
+    execute_query,
+    log_progress,
+    get_testing_clause
 )
 
 def ensure_columns_exist():
@@ -47,6 +49,17 @@ def ensure_columns_exist():
 def generate_clusters(radius_km: float = 5) -> int:
     """Generate postcode clusters and update the postcodes table."""
     try:
+        # Get total postcodes for progress tracking
+        total_postcodes = execute_query(f"""
+            SELECT COUNT(*) 
+            FROM postcodes 
+            WHERE latitude IS NOT NULL 
+            AND longitude IS NOT NULL
+            {get_testing_clause()}
+        """)[0][0]
+
+        logger.info(f"Processing {total_postcodes} postcodes")
+
         # Reset existing cluster data
         execute_query("""
             UPDATE postcodes 

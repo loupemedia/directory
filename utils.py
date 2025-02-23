@@ -7,6 +7,18 @@ from psycopg2.pool import SimpleConnectionPool
 from tenacity import retry, stop_after_attempt, wait_exponential
 import json
 
+# Testing configuration - Easy to find and modify
+TESTING_MODE = {
+    'enabled': True,  # Set to False to disable testing mode
+    'city': 'Brisbane',
+    'bounds': {
+        'lat_min': -27.767441,
+        'lat_max': -26.996845,
+        'lng_min': 152.668523,
+        'lng_max': 153.317871
+    }
+}
+
 # Load environment variables
 load_dotenv()
 
@@ -342,4 +354,20 @@ def update_submission_status(
         return True
     except Exception as e:
         logger.error(f"Error updating submission status: {str(e)}", exc_info=True)
-        return False 
+        return False
+
+def log_progress(current: int, total: int, description: str = "Progress"):
+    """Log progress as percentage with description."""
+    percentage = (current / total * 100) if total > 0 else 0
+    logger.info(f"{description}: {percentage:.1f}% ({current}/{total})")
+
+def get_testing_clause() -> str:
+    """Return SQL WHERE clause for testing mode."""
+    if not TESTING_MODE['enabled']:
+        return ""
+    
+    return f"""
+        AND city = '{TESTING_MODE['city']}'
+        AND latitude BETWEEN {TESTING_MODE['bounds']['lat_min']} AND {TESTING_MODE['bounds']['lat_max']}
+        AND longitude BETWEEN {TESTING_MODE['bounds']['lng_min']} AND {TESTING_MODE['bounds']['lng_max']}
+    """ 

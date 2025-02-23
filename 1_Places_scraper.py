@@ -11,7 +11,9 @@ from utils import (
     GOOGLE_TO_DIRECTORY_CATEGORY,
     execute_query,
     insert_task,
-    update_task_status
+    update_task_status,
+    log_progress,
+    get_testing_clause
 )
 
 PLACES_API_KEY = os.getenv('GOOGLE_PLACES_API_KEY')
@@ -174,21 +176,29 @@ def process_postcode(postcode_id: int, latitude: float, longitude: float, task_i
 
 def get_search_clusters(radius_km: float = 5) -> List[Dict]:
     """Group postcodes into clusters based on proximity to avoid duplicate searches."""
-    return execute_query("""
+    # Get total clusters for progress tracking
+    total_clusters = execute_query(f"""
+        SELECT COUNT(*) 
+        FROM postcodes 
+        WHERE is_cluster_center = TRUE
+        {get_testing_clause()}
+    """)[0][0]
+    
+    logger.info(f"Processing {total_clusters} clusters")
+    
+    return execute_query(f"""
         WITH numbered_locations AS (
             SELECT 
                 id,
                 postcode,
                 locality,
                 latitude,
-                longitude,
-                ROW_NUMBER() OVER (
-                    ORDER BY latitude, longitude
-                ) as rn
+                longitude
             FROM postcodes
             WHERE latitude IS NOT NULL 
             AND longitude IS NOT NULL
             AND (last_scraped IS NULL OR last_scraped < NOW() - INTERVAL '7 days')
+            {get_testing_clause()}
         ),
         clusters AS (
             SELECT 

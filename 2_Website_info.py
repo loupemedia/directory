@@ -11,7 +11,9 @@ from utils import (
     logger, 
     execute_query, 
     insert_task,
-    update_task_status
+    update_task_status,
+    log_progress,
+    get_testing_clause
 )
 
 CHATGPT_API_KEY = os.getenv('CHATGPT_API_KEY')
@@ -173,12 +175,14 @@ def main():
     try:
         while True:
             # Get next batch of listings to process
-            listings = execute_query("""
-                SELECT listing_id, website_url 
-                FROM listings 
-                WHERE website_url IS NOT NULL 
-                    AND website_url != '' 
-                    AND (post_content IS NULL OR what_makes_us_different IS NULL)
+            listings = execute_query(f"""
+                SELECT l.listing_id, l.website_url 
+                FROM listings l
+                JOIN postcodes p ON l.postcode_id = p.id
+                WHERE l.website_url IS NOT NULL 
+                    AND l.website_url != '' 
+                    AND (l.post_content IS NULL OR l.what_makes_us_different IS NULL)
+                    {get_testing_clause()}
                 LIMIT 10
             """)
             
@@ -186,7 +190,9 @@ def main():
                 logger.info("No more listings to process")
                 break
             
-            for listing_id, website_url in listings:
+            total = len(listings)
+            for idx, (listing_id, website_url) in enumerate(listings, 1):
+                log_progress(idx, total, "Processing websites")
                 logger.info(f"Processing website: {website_url}")
                 
                 # Create a task for this website
