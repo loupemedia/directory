@@ -60,12 +60,21 @@ TABLE_DEFINITIONS = {
         'columns': {
             'id': 'SERIAL PRIMARY KEY',
             'postcode': 'VARCHAR(50)',
+            'neighbourhood': 'VARCHAR(255)',
             'city': 'VARCHAR(100)',
             'region': 'VARCHAR(100)',
             'country': 'VARCHAR(50)',
             'last_scraped': 'TIMESTAMP',
             'created_at': 'TIMESTAMP DEFAULT NOW()',
-            'updated_at': 'TIMESTAMP DEFAULT NOW()'
+            'updated_at': 'TIMESTAMP DEFAULT NOW()',
+            'latitude': 'DECIMAL(10,8)',
+            'longitude': 'DECIMAL(11,8)',
+            'is_cluster_center': 'BOOLEAN DEFAULT FALSE',
+            'cluster_id': 'INTEGER',
+            'cluster_postcodes': 'INTEGER[]',
+            'last_updated': 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP',
+            'scrape_status': 'VARCHAR(20) DEFAULT \'pending\'',
+            'error_message': 'TEXT'
         }
     },
     'listings': {

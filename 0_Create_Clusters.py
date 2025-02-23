@@ -8,6 +8,7 @@ from utils import (
 
 def ensure_columns_exist():
     """Ensure all required columns exist in postcodes table."""
+    # Execute ALTER TABLE without expecting results
     execute_query("""
         ALTER TABLE postcodes
             ADD COLUMN IF NOT EXISTS latitude DECIMAL(10, 8),
@@ -19,25 +20,28 @@ def ensure_columns_exist():
             ADD COLUMN IF NOT EXISTS last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             ADD COLUMN IF NOT EXISTS scrape_status VARCHAR(20) DEFAULT 'pending',
             ADD COLUMN IF NOT EXISTS error_message TEXT;
+        COMMIT;
     """)
 
     # Create indexes in separate statements
+    execute_query("COMMIT;")  # Ensure previous ALTER TABLE is committed
+    
     execute_query("""
         CREATE INDEX IF NOT EXISTS idx_postcodes_coords 
         ON postcodes(latitude, longitude) 
-        WHERE latitude IS NOT NULL AND longitude IS NOT NULL
+        WHERE latitude IS NOT NULL AND longitude IS NOT NULL;
     """)
     
     execute_query("""
         CREATE INDEX IF NOT EXISTS idx_postcodes_cluster 
         ON postcodes(cluster_id) 
-        WHERE cluster_id IS NOT NULL
+        WHERE cluster_id IS NOT NULL;
     """)
     
     execute_query("""
         CREATE INDEX IF NOT EXISTS idx_postcodes_scrape 
         ON postcodes(last_scraped) 
-        WHERE is_cluster_center = TRUE
+        WHERE is_cluster_center = TRUE;
     """)
 
 def generate_clusters(radius_km: float = 5) -> int:
